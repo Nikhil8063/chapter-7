@@ -1,0 +1,666 @@
+<html>
+<head>
+    <title> chapter-7 </title>
+    <link rel="stylesheet" href="style.css">
+    <script src="main.js"></script>
+</head>
+    <body>
+        <div style="width: 100%;height: 5px; margin-top: -20px;background-color:slateblue;"></div>
+        <h2>Chapter 7. Getting Ready to Start NetView</h2>
+        <p>
+             When you start the NetView program, you use two START procedures, one for the NetView application (CNMPROC (CNMSJ009)) and one for the NetView subsystem (CNMPSSI (CNMSJ010)). It does not matter which you start first. If you start a second copy of the NetView program, create an additional pair of start procedures whose names are based on a second subsystem name.
+        </p>    
+        <br><br>
+         <h3> Modifying the NetView and Subsystem Application Procedure</h3>  
+        <div style="width:100%;height: 2px; margin-top: -20px;background-color:slateblue;"></div>
+        <br>
+        <p>
+         <b>About this task</b> 
+        <br><br>
+        
+            Review the copies of CNMPROC (CNMSJ009) and CNMPSSI (CNMSJ010) supplied with the V6R3 samples for the following considerations:
+        <br>
+            • &nbsp;&nbsp;The NetView program derives the 4-character subsystem name from the first 4 characters of the job name of the started task. The job name by default is the same as the procedure name, unless&nbsp;&nbsp;&nbsp;&nbsp; specified by the JOBNAME keyword. The sample procedures do not specify JOBNAME. Because of this, the name of the PROCLIB member and the PROC statement must begin with the 4-character subsystem name that you defined for running the NetView program. The associated CNMPSSI (CNMSJ010) start procedure must also begin with the same subsystem name. CNMP is used in the sample network.
+        <br><br>
+        <b>&nbsp;&nbsp;  Note:</b>   If the PROCLIB member name matches an entry in IEFSSNxx, use the SUB= parameter with the START command to specify a subsystem other than the MASTER subsystem. Specify a subsystem where SYSIN and SYSOUT are not supported.
+        <br><br>
+            • &nbsp;&nbsp;If you start a second copy of the NetView program in the same host, you must use a procedure name that begins with a 4-character &nbsp;&nbsp;subsystem name that is different from the one you have already started.
+        <br><br>
+         <b> &nbsp;&nbsp;  Tip:</b> Remember to add any 4-character subsystem name to the IEFSSNxx member in SYS1.PARMLIB.
+            • &nbsp;&nbsp;You can adjust the symbolic parameters in the sample CNMPSSI (CNMSJ010) procedure to meet your installation requirements. You can also adjust these parameters using the SSI statement in the CNMSTYLE member.
+        </p> 
+         <h3> Modifying the NetView Startup Procedure</h3>	
+        <div style="width:100%;height: 2px; margin-top: -20px;background-color:slateblue;"></div>
+        <p>
+        <b> About this task</b>
+        <br>
+        <br>
+       
+            CNMPROC (CNMSJ009) was copied to the PROCLIB when you loaded partitioned data sets during installation. Make the following changes to the NetView startup procedure (CNMPROC):
+        <br>
+       
+            •&nbsp;&nbsp;	Set the value for &NV2I if you are running more than one NetView program on a system or sysplex.<br>
+            •&nbsp;&nbsp;	Change the name of the program that starts NetView if you do not want to use the SVC76 interface for local device alerts.<br>
+            •&nbsp;&nbsp;	Ensure that the NetView dispatch priority is adequate.<br>
+            •&nbsp;&nbsp;	Adjust the region size, buffer size, and slot size if necessary.<br>
+            •&nbsp;&nbsp;	Ensure that your user-defined data sets are included.<br>
+            •&nbsp;&nbsp;	Ensure that the SYSTCPD statement specifies your TCP/IP control data set.
+        </p>    
+        <br>
+        
+        
+        
+        <h4>  Defining TCP/IP to the NetView Program</h4>  
+         <p>   The NetView program provides services that rely on TCP/IP to communicate with remote applications. To communicate with TCP/IP, each of these services use a program function library, referred to as the TCP/IP socket library. This makes the NetView application a TCP/IP socket application.
+         <br>
+        <br>
+         
+        
+            Any TCP/IP socket application must reference TCP/IP configuration data. The method of accessing this data is defined by z/OS Communications Server.
+        <br><br>     
+            An example SYSTCPD DD statement is provided in the NetView startup procedure to identify the location of TCP/IP configuration data. A SYSTCPD statement is not required for the NetView program, but any TCP/IP socket application must be able to locate TCP/IP configuration data.
+        <br><br>
+            You also need access to z/OS TCP/IP data sets from the NetView start procedure. If the z/OS TCP/IP data sets are not contained in the LNKLST concatenation, add the following z/OS TCP/IP data set (which must be APF-authorized) to the STEPLIB DD concatenation.
+        <br><br>
+             <b>SEZALOAD</b>
+        <br>
+            Executable load modules for concatenation to LINKLIB
+        <br><br>
+            To optimize performance, make these data sets available from the LNKLST concatenation.
+        <br><br>   
+             Ensure that the user ID that is associated with the NetView started task or job is defined to your SAF product with an OMVS segment. This is required so that the NetView program can use z/OS UNIX System Services (USS) functions, which include TCP/IP functions.
+        <br><br>
+        <b>Usage notes:</b>
+        <br>
+            1.	For each of the TCP/IP services that is provided by the NetView program, the stack affinity is specified in the CNMSTYLE member using the TCPname statement. Using this name, NetView sets the stack affinity by specifying it on an INITAPI socket call.
+        <br><br>
+            2.	Some NetView applications that are not a part of the NetView address space rely on TCP/IP to communicate with remote applications. Some of these applications use the z/OS UNIX socketlibrary. These applications are therefore z/OS UNIX socket applications. Information on how these applications reference TCP/IP configuration data is discussed in the books describing those applications. Examples of z/OS UNIX socketapplications are the Event/Automation Service and the UNIX command server.
+         <br><br>
+
+            <pre><b>If you want information about...	                  Refer to...</b></pre>
+        <hr>
+        <pre> TCP/IP socket applications, SYSTCPD DD                  z/OS Communications Server IP Configuration Guide
+  statement              
+</pre>
+        </p>        
+       <br><br><br>
+    <h3>Updating the CNMSTYLE Member</h3>
+    <div style="width:100%;height: 2px; margin-top: -20px;background-color:slateblue;"></div>
+    <p>   CNMSTYLE is a member of DSIPARM that is used during NetView initialization. Changes to the NetView initialization process are made in CNMSTUSR or             CxxSTGEN.
+    <br><br>
+        The member name for CNMSTYLE is controlled by the value of &NV2I in the NetView start procedure. The NetView default value for &NV2I is NM. If you specify a value for &NV2I (xx), the NetView program reads CxxSTYLE in DSIPARM for initialization parameters. If this member is not found, NetView reads the CNMSTYLE member instead. The included member CxxSTGEN is also resolved using the value of &NV2I for xx.
+     <br><br>
+        The sample CNMSTYLE member in DSIPARM contains descriptive comments about the types of statements that are included in the member. Read the comments and review the defaults. The sections that follow provide additional details for some of the NetView functions.
+     <br><br>
+        <pre>If you want information about...	                  Refer to...</pre>
+        <hr>
+    <pre>CNMSTYLE Processing	                          <i>IBM Z NetView Installation: Getting Started</i></pre>
+    <hr>
+    <pre>CNMSTYLE statements	                         Comments in the CNMSTYLE member and<i> IBM Z 
+                                                 NetView Administration Reference</i></pre>
+ 
+       <p><h4>Customizing the CNMSTYLE Member</h4> 
+    <br><br>
+Customize the CNMSTYLE member by making global (enterprise) changes to the CNMSTUSR member, and then copying the modified CNMSTUSR member to each NetView system.
+<br><br>
+You can make system-specific changes to the CxxSTGEN member that is included in the CNMSTYLE member using the %INCLUDE statement (where xx is the value of &NV2I, which is initially set to NM). Code all override statements for the CNMSTYLE and CNMSTUSR members in this member. Duplicate statements found in the CxxSTGEN member override earlier statements in the CNMSTYLE and CNMSTUSR members. You can specify the value of NV2I in the NetView start procedure.
+<br><br>
+You can use Data REXX in the members that are included in the CNMSTYLE member using the %INCLUDE statement. Data REXX is not supported in the CNMSTYLE member. Instead, you can define tower and subtower conditions in the CNMSTUSR or CxxSTGEN members to control the statements in the CNMSTYLE member.
+<br><br>
+<b>Note:</b> If you make changes to the included members while the NetView program is running, the changes become effective when you recycle the NetView program. For certain types of changes, you can use the RESTYLE command to activate these changes without recycling the NetView program. For more information on the types of changes that can be activated using the RESTYLE command, see the NetView online help or IBM Z NetView Command Reference Volume 2 (O-Z).
+<br><br>
+       <pre><b>If you want information about...	                  Refer to...</b></pre>
+        <hr>
+        <pre>RESTYLE command	                                         NetView online help or<i> IBM Z NetView Command 
+                                                         Reference Volume 2 (O-Z)</i>
+
+        </pre>
+    </p>
+     <h4> Using %INCLUDE Members</h4>
+<p>
+          The following members are included when the CNMSTYLE member initializes:
+      <br><br>    
+           Member
+    <br>
+             &nbsp;&nbsp; &nbsp;&nbsp;   Usage
+    <br><br>
+            CNMSTACT
+    <br>
+            &nbsp;&nbsp; &nbsp;&nbsp;Includes the CNMSTAAL member if the IBM Z NetView for Continuous Availability product is installed. The CNMSTACT member is used for the GDPS Continuous Availability solution.
+    <br><br> 
+            CNMSTPWD
+    <br>
+            &nbsp;&nbsp; &nbsp;&nbsp;If needed, you can use this member to include VPD, VSAM, and ACB passwords. You can use the READSEC command to protect the CNMSTPWD member from being displayed by the &nbsp;&nbsp; &nbsp;&nbsp; BROWSE command.
+    <br><br> 
+            CNMSTNXT
+    <br>
+             &nbsp;&nbsp; &nbsp;&nbsp;Includes modifiable CNMSTYLE statements by release. The CNMSTNXT member is commented out in the CNMSTYLE member. It is provided for documentation purposes only.
+    <br><br> 
+            CNMSTASK
+    <br>
+             &nbsp;&nbsp; &nbsp;&nbsp;Task statements that are provided with the NetView program. Do not modify this member. Instead, include any task statements that you want to include directly in the CNMSTUSR or &nbsp;&nbsp; &nbsp;&nbsp; CxxSTGEN member. The task statements in the CNMSTUSR and CxxSTGEN member override those that are provided in the CNMSTASK member.
+    <br><br> 
+            CNMSTIDS
+    <br>
+            &nbsp;&nbsp; &nbsp;&nbsp;Includes Intrusion Detection Services (IDS) statements. Review this member if you are enabling IDS support.
+    <br><br> 
+            CNMSTTWR
+    <br>
+            &nbsp;&nbsp; &nbsp;&nbsp;Includes statements from non-NetView towers. Do not edit this member unless instructed by documentation for a tower you are installing.
+    <br><br> 
+            CNMSTWBM
+    <br>
+             &nbsp;&nbsp; &nbsp;&nbsp;Includes webmenu statements.
+    <br><br> 
+            CNMSTUSR
+    <br>
+            &nbsp;&nbsp; &nbsp;&nbsp;You can include global (enterprise) definition statements that override statements in the CNMSTYLE member. Use this member to customize the CNMSTYLE member. You can use Data REXX logic.
+     <br><br> 
+             &nbsp;&nbsp; &nbsp;&nbsp;<b> Note:</b> You can also use the %INCLUDE statement in this member to include other members of your choosing.
+    <br><br> 
+            C&NV2I.STGEN
+    <br>
+             &nbsp;&nbsp; &nbsp;&nbsp;You can include system-specific definition statements in this member, including Data REXX logic.
+    <br><br>
+            &nbsp;&nbsp; &nbsp;&nbsp;<b>Note:</b> You can also use the %INCLUDE statement in this member to include other members of your choosing.</p>
+
+    <h4>Using System Symbols</h4>
+      <p>   Many NetView processes require the RODM name, NetView domain, TCP name, and network ID. CNMSTYLE processing sets NetView symbols for these names. You can also set MVS system symbols for the RODM name, TCP name, and network ID in member IEASYMxx in SYS1.PARMLIB. If you choose to set a system symbol for the network ID, it must be the same as the value returned by VTAM when NetView opens its ACB.
+  <br>
+            <img src="Screenshot%20(78).png">
+    <br>
+
+           <b> Note:</b>
+        <br><br>
+            1. &nbsp;&nbsp;	If you specified the NetView domain ID or password in the CNMPROC (CNMSJ009) procedure, the DOMAIN or the ACBpassword statements in the CNMSTYLE member are not used. They are ignored unless the parameters passed by the CNMPROC procedure are null. If the domain password is not specified in the CNMPROC procedure or in the CNMSTYLE member, the domain name becomes the password.
+          <br><br>
+            2. &nbsp;&nbsp;	The system symbols that are set in IEASYMxx are enabled for all address spaces. NetView symbols that are set using global variables that you set through the CNMSTYLE member only apply to this NetView address space.
+          
+     </p>
+        <h4>Using STYLEVAR</h4>
+         <p>   Use STYLEVAR to define variables that can be used anywhere within the CNMSTYLE member (except for the command phase). You can use these variables     to simplify the process of entering repetitious data.
+         <br><br>
+            Note:
+         <br><br>
+            1.	System symbolic names are not valid names for STYLEVAR variable names.<br>
+            2.	STYLEVAR variable values cannot contain another STYLEVAR variable.<br>
+             <pre><b>If you want information about...	                  Refer to...</b></pre>
+        <hr>
+        <pre>STYLEVAR statement	                                  Comments in the CNMSTYLE member and<i> IBM Z 
+                                                        NetView Administration Reference</i>
+
+        </pre> 
+     </p>
+     <br>
+                   
+      <h4>Activating NetView Components</h4>
+
+        <p> NetView components can be activated with TOWER statements. Tower statements are examined earlier in the initialization process than most other          variables (for example, common global variables). This is useful, for example, to conditionally control the initialization process.
+         <br><br>
+            This is an example of the default TOWER statement:
+         <br><br>
+            <img src="Screenshot%20(79).png">
+        <br><br>
+            <b>Usage notes:</b>
+        <br><br>
+            1.	A tower is enabled if it is not preceded by an asterisk. To enable a tower, remove the asterisk (*) before the tower name.
+          <br><br>   
+            2.	To disable a tower, add a MODIFY.TOWER statement with a minus sign. For example:
+        <br><br> 
+            <img src="Screenshot%20(80).png">
+        <br><br>
+            3.	If multiple TOWER statements exist, the last TOWER statement encountered is processed. It is important to remember that modified TOWER statements are not recognized until the NetView program is restarted.
+        <br><br> 
+            You can use modify statements (MODIFY.TOWER) to enable specific components within a tower. The following are some examples of statements enabling or disabling subtowers:
+        <br><br>  
+            <img src="Screenshot%20(81).png">
+        <br><br>
+            Note that the "sortkey" values indicate the order of processing and must all be different. A plus sign indicates an item is being enabled and a minus sign indicates an item is being disabled. For any attempt to enable or disable a subtower to be effective, the tower must have previously been enabled.
+        <br><br>
+            Review the subtower statements that are associated with the towers that are supplied with the NetView product that you enable. To enable a subtower, create a MODIFY.TOWER statement in the CNMSTUSR or CxxSTGEN member. To enable or disable any tower or subtower, you must recycle the NetView program, so review these statements carefully. If you plan on implementing any of the tower and subtower components, consider enabling the functions during this step in the installation process.
+        <br><br>
+            Table 34 on page 91 lists the towers and subtowers that are provided with the NetView program:
+        <br>
+    </P>
+            <img src="Screenshot%20(82).png">
+<br><br>
+            <img src="Screenshot%20(83).png">
+<br><br>
+            <img src="Screenshot%20(84).png">
+<br><br>
+        <pre><b>If you want information about...	               Refer to...</b></pre>
+        <hr>
+        <pre>AON, hardware monitor, session monitor	             IBM Z NetView Installation: Configuring Additional
+       
+                                                     Components
+        <hr>
+MultiSystem Manager subtowers	                       IBM Z NetView Installation: Configuring Graphical
+                                                      Components
+       <hr>
+ 
+Z NetView Enterprise Management Agent tower and     IBM Z NetView Installation: Configuring the NetView 
+subtowers                                           Enterprise Management Agent
+      </pre>
+<br><br>
+    <h4>Setting up Security</h4>
+<p>You can use the SECOPTS statement to specify levels of security:<br>
+•	Operator security<br>
+•	Command authority<br>
+•	Span of control authority<br>
+<br>
+<pre><b>If you want information about...	               Refer to...</b></pre>
+        <hr>
+        <pre>Security options                                      <i>IBM Z NetView Security Reference</i>
+        <hr>
+SECOPTS keywords                                     <i>IBM Z NetView Administration Reference</i>
+      </pre>
+</p>
+<br>
+
+<h4>Specifying Commands to Run Automatically When the NetView Program Is Started</h4>
+<p>To define a command or a command list to run automatically when the NetView program is started, use the auxInitCmd statement in CNMSTUSR or CxxSTGEN. You can specify any number of commands or command lists to be run. The EBCDIC value following the auxInitCmd keyword determines the order the commands are run.<br>
+<br>
+An example follows:
+<br><br>
+<img src="Screenshot%20(85).png">
+<br>
+In this case, the MSG SYSOP command (A) runs before the LISTVAR command (AC).
+<br><br>
+<b>Note:</b> These AuxInitCmd commands run before any commands at any autotask. All commands for autotasks, including both task initial command lists and commands sent by EXCMD, are queued and held up. They run only after all AuxInitCmds have completed. Messages are also queued; they are not submitted to automation nor logged until all AuxInitCmds have completed.
+<br>
+<br>
+<pre><b>If you want information about...	                Refer to...</b></pre>
+        <hr>
+        <pre>Creating a command list to run at NetView             <i>IBM Z NetView Programming: REXX and the NetView Command List</i> 
+initialization                                        <i>Language</i>
+              
+      </pre>
+</p>
+
+<h4>Starting the NetView Subsystem Interface</h4>
+ 
+ <p>You can start the NetView Subsystem Interface (SSI) by using the SSI.ProcString statement in CNMSTUSR or CxxSTGEN:
+<br><br>
+<img src="Screenshot%20(86).png">
+<br><br>
+Specify the procedure name (for example, CNMPSSI). The NetView program provides a value for the PPIOPT parameter. You can also specify additional start parameters (such as SUB=MSTR) that are required for your installation.
+<br><br>
+<b>Note:</b> Do not specify the PPIOPT parameter on the SSI.ProcString statement because the NetView program adds this parameter during processing. To update this value, use the SSI.PPI statement.
+<br><br>
+If you specify *NONE* for SSI.ProcString statement, the CNMCSSIR task does not start the SSI procedure. This is the default.
+<br><br>
+<pre><b>If you want information about...	                Refer to...</b></pre>
+        <hr>
+        <pre>Starting the SSI using CNMPSSI                         Information about modifying the NetView subsystem 
+                                                       interface procedure in<i> IBM Z NetView Installation: 
+                                                       Getting Started </i>
+        <hr>
+SSI CNMSTYLE statements                               Comments in the CNMSTYLE member and <i>IBM Z 
+                                                      NetView Administration Reference</i>
+    </pre> 
+<br>
+<h4>&nbsp;&nbsp;&nbsp;&nbsp;Specifying Initialization Values for NetView Components</h4>
+The initialization values for some NetView components are specified in the CNMSTYLE initialization member. Table 35 on page 95 lists the NetView components that have primary tasks that use an initialization member in the DSIPARM data set. The initialization member requires information from the CNMSTYLE member. If you are not using the initialization member that is available with the NetView V6R3 program, migrate your customization to the CNMSTUSR or CxxSTGEN member and remove your customized initialization member from the DSIPARM concatenation.
+<br>
+<img src="Screenshot%20(87).png">
+<br>
+<br>
+<pre><b>If you want information about...	               Refer to...</b></pre>
+        <hr>
+        <pre>CNMSTYLE statements	                               <i>IBM Z NetView Administration Reference</i>             
+      </pre>
+</p>
+
+
+
+<h4>Listing the Active CNMSTYLE Member Name</h4>
+
+<p>
+    <b>About this task</b>
+<br><br>
+    The common global variable CNMSTYLE.STYLE is set to the name of the CNMSTYLE member read. To list the active CNMSTYLE member, enter:
+    <br><br>
+<img src="Screenshot%20(88).png">
+    
+</p>
+<h4>Using the Report Generator</h4>
+
+<p>You can use the CNMSTYLE report generator to analyze the CNMSTYLE member. You can use the report that is created to take the following actions:
+<br><br>
+•	List the %INCLUDE structure.<br>
+•	Analyze multiple occurrences of statements within the CNMSTYLE member. Use this to determine which value is used during NetView initialization. For statements that are listed multiple times in the report, the last statement that is listed is the one used for initialization.<br>
+•	List the CNMSTYLE towers that are enabled.<br>
+•	Analyze initialization statements for a particular function.<br><br>
+
+<b>Running the report</b>
+<br><br>
+To run the CNMSTYLE report generator, use the CNMSJCRG sample in the NETVIEW.V6R3USER.INSTALL data set. This INSTALL data set was created during installation by the CNMSJBUP sample job. The CNMSJCRG sample is a job that runs outside of the NetView address space and runs the REXX program CNMECRG under the TSO terminal monitor program.
+<br><br>
+The CNMSJCRG sample requires the following data sets:
+<br><br>
+STEPLIB<br>
+ &nbsp;&nbsp; &nbsp;&nbsp;The NetView CNMLINK data set from the current release, NETVIEW.V6R3M0.CNMLINK.<br>
+SYSEXEC<br>
+ &nbsp;&nbsp; &nbsp;&nbsp;The concatenated data set list of the NetView CNMCLST data sets from the current release.<br>
+DSIPARM<br>
+ &nbsp;&nbsp; &nbsp;&nbsp;The concatenated data set list containing current release versions of the CNMSTYLE member. Ensure that the data set concatenation order is the same as that specified in the NetView start procedure CNMPROC.<br>
+CNMPNL1<br>
+ &nbsp;&nbsp; &nbsp;&nbsp;The NetView CNMPNL1 data set from the current release, NETVIEW.V6R3M0.CNMPNL1.<br>
+DSIWRIT<br>
+&nbsp;&nbsp; &nbsp;&nbsp;The output partition data set to which the generated report member is written. The output of the report generator is written as a member of a partition data set. If you use the NetView default&nbsp;&nbsp; &nbsp;&nbsp; naming convention, the data set name is NETVIEW.V6R3USER.CNM01.DSILIST.
+The CNMSTYLE report is written to member CNMCRG in the DSIWRIT data set. If member CNMCRG already exists, a backup copy of the existing CNMCRG member is created and named CNMCRGBK. If member CNMCRGBK exists, it is overwritten with the existing CNMCRG member.
+</P>
+     
+You can specify keyword parameters in CNMSJCRG. Each keyword parameter and value must be specified on a separate line, just below the CNMECRG command. Do not continue the value onto a second line. All characters typed on a line are interpreted as input to CNMECRG. If a keyword parameter is specified more than once, the first value is used and all subsequent values specified are ignored. Input ends when either a blank line or a /* occurs.
+<br><br>
+You can specify the following keywords:
+<br><br>
+TASKS=YES | NO<br>
+&nbsp;&nbsp; &nbsp;&nbsp;Specifies whether to include CNMSTASK statements in the report.<br>
+&nbsp;&nbsp; &nbsp;&nbsp;YES<br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;Includes statements from the CNMSTASK member. This is the default value.<br>
+&nbsp;&nbsp; &nbsp;&nbsp;NO<br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;Does not include CNMSTASK statements.<br><br>
+&NV2I=xx<br>
+&nbsp;&nbsp; &nbsp;&nbsp;The default value for xx is NM. If a value that is not valid is specified, an error message is issued and the default value NM is used in the report. If you use alphabetic characters, the characters are converted to uppercase.<br><br>
+<b><i>&symbolic_name= value</i></b><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Provides the value of a system or NetView symbolic variable (&symbolic_name) that you are using in the CNMSTYLE member. A symbolic parameter must be passed to CNMECRG to be resolved in the report.
+<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;The CNMSTYLE Report Generator, when reading a NetView definition member, cannot resolve symbolic references that refer to a substring of a symbolic variable such as<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;<img src="Screenshot%20(89).png"><br>
+<p>
+<b>Usage notes:</b><br>
+1.	Precede the symbolic_name with an ampersand (&).<br>
+
+2.	The symbolic_name can optionally include a trailing period (.).<br>
+3.	Use single quotation marks (‘ ’) if value has leading or trailing blanks.<br>
+4.	Do not specify a value that contains a symbolic variable, such as<br><br>
+<img src="Screenshot%20(90).png"><br><br>
+or that contains a substring of a symbolic variable, such as<br><br>
+<img src="Screenshot%20(91).png"><br><br>
+</p>
+The following example shows keyword parameters for CNMECRG within CNMSJCRG<br><br>
+<img src="Screenshot%20(92).png"><br><br>
+
+<b>Analyzing the Report</b><br><br>
+The CNMSTYLE report includes the following sections:<br><br>
+1.	General information and CNMSTYLE statements that pertain to all of NetView<br><br>
+2.	CNMSTYLE statements that pertain to specific functions of NetView<br><br>
+3.	auxInitCmd statements and user-defined statements<br><br>
+4.	User-defined and unrecognized statements<br><br>
+5.	Data REXX and %INCLUDE statements<br><br>
+Because the TASKS parameter is set to NO, the report in this example does not include CNMSTASK statements.<br><br>
+The first section of the CNMSTYLE report is shown in Figure 6 on page 98. This part of the report contains general information related to the CNMSTYLE member, such as:<br><br>
+•	The date and time the report was created<br><br>
+•	The &NV2I symbolic variable value being used<br><br>
+•	A nested listing of the members included by the CNMSTYLE member<br><br>
+•	A list of the CNMSTYLE towers that are enabled when NetView initializes<br><br>
+•	A list of CNMSTYLE statements that apply to base NetView
+
+<br><br>
+<img src="Screenshot%20(93).png"><br><br>
+<i>Figure 6. First section of CNMSTYLE report</i><br><br>
+
+The format of the CNMSTYLE statements presented in the generated report includes the following fields:<br><br>
+<b>Member</b><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Member name containing the statement<br><br>
+<b>Line#</b><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Line number within the member where the CNMSTYLE statement is located. If a statement is a continuation statement, only the line number where the statement begins is listed.<br><br>
+<b>Indicators</b><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Lists information about the statement. This information is formatted in the following way:<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;R CCCCCC<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;where R represents the Resolve indicator and CCCCCC represents the Condition indicator:<br><br>
+<b>&nbsp;&nbsp; &nbsp;&nbsp;Resolve</b><br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;Indicates whether the given CNMSTYLE statement was modified by the report generator. A specification of Y indicates that the statement was modified. For example, a symbolic variable was substituted or an autotask statement that uses the question mark (?) feature was resolved.<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;If the resolve field has no value listed, no modifications were made to the statement.<br><br>
+<b>&nbsp;&nbsp; &nbsp;&nbsp;Condition</b><br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;Indicates that a condition is required for the listed CNMSTYLE statement to be active, such as a tower that must be enabled. If only one tower is required to be enabled the condition field is set to the required tower name. The first 10 characters of the tower name are listed. If more than one tower must be enabled or if some other condition must be met, the condition field is set to four asterisks (****).
+<br>
+&nbsp;&nbsp; &nbsp;&nbsp;If the condition field has no value listed, no conditions are required for the statement to be active.<br><br>
+<b>Statement</b><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Lists the CNMSTYLE statement and its value. Extra spacing in the statement might be removed, along with any tower conditionals that are found at the beginning of the statement. Statements can be further modified by having values substituted into either the CNMSTYLE keyword or its value.
+&nbsp;&nbsp; &nbsp;&nbsp;Values of CNMSTYLE keywords that contain passwords and other values critical to security are identified as a security risk and are listed in the report as four asterisks (****) to prevent unauthorized viewing.
+The second section of the report lists CNMSTYLE statements for specific NetView functions. For example, Figure 7 on page 99 lists statements for the hardware monitor (NPDA) component.<br><br>
+If a CNMSTYLE statement applies to multiple NetView functions, that statement is listed for each NetView function to which it applies. For example, the TOWER statement applies to both the hardware monitor and the session monitor, and various other NetView functions.<br><br>
+Within a function, the most critical statements are listed first, followed by less critical statements. NetView functions are presented in the report alphabetically.<br><br>
+<img src="Screenshot%20(94).png"><br>
+<i>Figure 7. NetView Function Information</i><br><br>
+The third section of the report lists the auxInitCmd statements as shown in Figure 8 on page 99. The auxInitCmd statements are listed in the order they are encountered in the CNMSTYLE member.<br><br>
+<img src="Screenshot%20(95).png">
+
+<br><br><br>
+
+The fourth section of the report lists CNMSTYLE statements that are not recognized by the CNMSTYLE report generator as belonging to a specific NetView function or to the<i>general NetView information in the first section of the report. A statement might be listed under User-Defined/Unrecognized CNMSTYLE Statements</i> for the following reasons:<br><br>
+•	A statement might be owned by another product such as IBM Z System Automation.<br><br>
+•	A statement might require an additional CNMSTYLE statement to become active.<br><br>
+For example, the AUTOTASK.?APSERV.Console CNMSTYLE statement requires the
+function.autotask.APSERV statement before it can become active.<br><br>
+•	A statement was moved from IBM Z NetView to another product.<br><br>
+For example, the ACTACT.MASTER.DELAY statement was part of the IBM Z NetView product but was moved to the IBM Z NetView for Continuous Availability product. If the ACTACT.MASTER.DELAY statement was modified and placed in the CNMSTUSR member and the IBM Z NetView product but was moved to the IBM Z NetView for Continuous Availability product is not installed, the ACTACT.MASTER.DELAY statement is not recognized by the Report Generator until the IBM Z NetView product but was moved to the IBM Z NetView for Continuous Availability product is installed.<br><br>
+•	A statement is created by a user.<br><br>
+For example, you define the OPAAA01 autotask as follows:<br><br>
+<img src="Screenshot%20(96).png"><br><br>
+The function.autotask.MyAutoOp statement is listed as a user-defined/unrecognized statement in Figure 9 on page 100.<br><br>
+<img src="Screenshot%20(97).png"><br><br>
+<i>Figure 9. User-Defined/Unrecognized CNMSTYLE Statements</i><br><br>
+
+The fifth section of the report lists Data REXX and %INCLUDE statements, as shown in Figure 10 on page
+101. During report processing, Data REXX statements are ignored. Data REXX statements are listed in the report in the order that they are encountered in the CNMSTYLE member. Only the first 63 characters of each Data REXX statement are placed in the report. CNMSTYLE statements within a %DATA portion of a Data REXX block that are affected by an IF-THEN statement are also listed to help you understand which CNMSTYLE statements are impacted by your Data REXX statements.<br><br>
+%INCLUDE statements are also listed in section 5 and are listed within the Data REXX statements in the order that they are encountered in the CNMSTYLE member. All %INCLUDE members that are found are included by the CNMSTYLE report generator in the report. Because some %INCLUDE members might be conditionally included, review the conditions surrounding a %INCLUDE statement to ensure that the report reflects your environment.<br><br>
+Member names on %INCLUDE statements that are not found in the DSIPARM concatenation result in a return code of 4 from the report generator. If you feel that a member is missing but should have been included, review your DSIPARM concatenation in CNMSJCRG for any missing data sets. However, be aware that some members might ship with a feature that you have not installed currently.
+<br><br>
+
+<img src="Screenshot%20(99).png"><br>
+<i>Figure 10. Data REXX and %INCLUDE Statements</i>
+
+<b>Note:</b> Only the first 63 characters of each Data REXX statement are displayed.<br><br>
+<p>
+<b>Return codes</b><br><br>
+The following return codes are set by CNMECRG:<br><br>
+0<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Successful completion; a file was created in DSIWRIT<br><br>
+4<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Minor errors encountered; a file was created in DSIWRIT<br><br>
+8<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Major error encountered; a file was not created in DSIWRIT<br><br>
+For non-zero return codes, error messages can be found in the CNMSJCRG job log.<br><br>
+</P>
+<h3>Migrating without Restarting the MVS System	</h3>
+ <div style="width:100%;height: 2px; margin-top: -20px;background-color:slateblue;"></div>
+<p>The normal process for installing and starting the NetView program requires restarting the MVS system, in order to load required LPA modules and activate required subsystems. If you are migrating from NetView V5R3 program or later, you can avoid restarting the MVS system by completing the same steps manually.The steps to follow vary depending upon the earlier version of the NetView program from which you are migrating.
+</p>
+<br><br>
+
+<b>Migrating from NetView V6R1 Program without Restarting The MVS System</b>
+<p>Follow these steps if you want to complete the migration from NetView V6R1 program without restarting the MVS system.<br><br>
+
+<b>Before you begin</b><br><br>
+This procedure assumes that you completed all installation procedures that are previously documented in this information, but without restarting the MVS system.<br><br>
+You must obtain and apply PTF UA70457 to the NetView V6R1 product and complete the set of instructions in the ++HOLD data in order to continue without restarting the MVS system. This same fix is necessary to resume operation of your NetView V6R1 product (without restarting the MVS system) after you migrated to the NetView V6R3 product.<br><br>
+
+<b>Procedure</b><br><br>
+1.	Verify that PTF UA70457 was applied to the NetView V6R1 product.<br><br>
+2.	Add the required CNMCSRVP module to the link pack area (LPA).<br><br>
+&nbsp;&nbsp;You can issue the following command to dynamically add this module:<br><br>
+<img src="Screenshot%20(100).png"><br><br>
+3.	If the NetView V6R3 program uses the same subsystem name as V6R1, stop all NetView V6R1 address spaces.<br><br>
+4.	Add the required NetView modules to the list of APF-authorized libraries.<br><br>
+&nbsp;&nbsp;Issue the following MVS command to dynamically add NetView libraries to the list of APF-authorized libraries without requiring a system restart:<br><br>
+<img src="Screenshot%20(101).png"><br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;Issue the following MVS commands to add APF authorizations for the required NetView libraries:<br><br>
+<img src="Screenshot%20(102).png"> <br><br>
+where vol-ser is the name of the volume where the NetView V6R3 libraries were allocated.<br><br>
+5.	If you want to define a new NetView subsystem for your NetView V6R3 installation or your NetView V6R1 installation, define this subsystem now. To dynamically add the NetView subsystem, issue the SETSSI ADD command:<br><br>
+<img src="Screenshot%20(103).png"><br><br>
+
+where ssiname is a new subsystem name.<br><br>
+
+<b>Note:</b> When APARs OA55071 and OA55074 are applied, you must specify an INITPARM parameter with the Canzlog data space parameters that you want to use on the SETSSI ADD,SUBNAME=ssiname,INITRTN=DSI4LSIT command. This step must be done, because the Canzlog data space structure has changed as a result of the specified APARs. For more information, see the Installation: Getting Started.<br><br>
+
+<b>Tip:</b> The subsystem name for an instance of the NetView program consists of the first 4 characters of the job name that is associated with its main address space and the matching SSI procedure. The subsystem name that you use for a NetView instance must not be the same as any other subsystem name in use; multiple NetView address spaces cannot use the same subsystem name.<br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;The CNM617I message is displayed when the SETSSI ADD command completes.<br>
+
+6.	Make sure that the NetView V6R3 libraries are included on the STEPLIB DD statements in the specified NetView V6R3 start procedure:<br><br>
+
+
+<img src="Screenshot%20(104).png"><br><br>
+
+While it is possible to dynamically add the NetView V6R3 libraries to the MVS LNKLST concatenation, doing so can affect other processes and applications that are running in your z/OS environment. You can avoid this situation by placing the appropriate NetView V6R3 libraries on STEPLIB DD statements in the respective start procedures. Refer to the NetView V6R3 sample start procedures in the NETVIEW.V6R3M0.CNMSAMP data set to review examples of STEPLIB DD statements for each of the NetView start procedures that are listed in Table 36 on page 103.<br><br>
+
+7.	Start the NetView subsystem procedure (CNMPSSI) for your NetView V6R3 subsystem. The CNM541I message is displayed after the NetView subsystem starts successfully.<br><br>
+
+8.	Start the NetView procedure (CNMPROC) for the NetView V6R3 program.<br><br>
+
+9.	Start any additional NetView V6R3 address spaces when they are migrated to the NetView V6R3 level.<br><br>
+
+    <b>Returning to NetView V6R1 Program without Restarting the MVS System</b><br>
+To resume operation of your previous NetView V6R1 installation without restarting the MVS system, complete these steps.<br><br>
+
+    <b>Before you begin</b><br>
+To resume operation of NetView V6R1 program, you must have PTF UA70457 applied to your NetView V6R1 product. Verify that this PTF was applied on your system before proceeding.<br><br>
+
+    <b>Procedure</b><br><br>
+1.	If your NetView V6R3 program uses the same subsystem name as your V6R1 program, stop all NetView V6R3 address spaces.<br><br>
+2.	For the NetView program to use the V6R1 version of the CNMCSRVP module, issue the following command:<br><br>
+
+<img src="Screenshot%20(105).png"><br><br>
+
+3.	Start all NetView V6R1 address spaces.<br><br>
+</p>
+<b>Migrating from NetView V6R2 Program without Restarting the MVS System</b><br>
+<p>Follow these steps if you want to complete the migration from NetView V6R2 program without restarting the MVS system.<br><br>
+
+ <b>Before you begin</b><br>
+This procedure assumes that you completed all installation procedures that are previously documented in this information, but without restarting the MVS system.<br><br>
+
+<b>Procedure</b><br>
+1.	If the NetView V6R3 program uses the same subsystem name as V6R2, stop all NetView V6R2 address spaces.<br>
+2.	Dynamically add the NetView V6R3 modules to the link pack area (LPA):
+       <pre>        • BNJLINTB
+        • BNJMTERM
+        • BNJSVC76
+        • CNMCNETV
+        • CNMCSRVP
+        • CNMCSSEI
+        • CNMCSSPI
+        • CNMNETV
+        • DSIELSVC
+        • DSIRVCEX
+        • DSISPNOT
+        • DSI4LCUI
+        • DSI4LSIT
+        </pre>
+Use the<b> SETPROG LPA ADD</b> command to add each module:<br><br>
+<img src="Screenshot%20(106).png"><br><br>
+where module is the module name and NETVIEW.V6R3M0.SCNMLPA1 is the NetView library where the module was installed.<br><br>
+
+<b>Note:</b> To ensure that all updates are applied, consider loading the most recent version of each module in the LPA. You can load all of the modules in NETVIEW.V6R3M0.SCNMLPA1 with one command by issuing the following command:<br><br>
+<img src="Screenshot%20(107).png"><br><br>
+3.	Add the required NetView modules to the list of APF-authorized libraries.<br><br>
+Issue the following MVS command to dynamically add NetView libraries to the list of APF-authorized libraries without requiring a system restart:<br><br>
+<img src="Screenshot%20(108).png"><br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;Issue the following MVS commands to add APF authorizations for the required NetView libraries:<br><br>
+ <img src="Screenshot%20(109).png"><br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;where vol-ser is the name of the volume where the NetView V6R3 libraries were allocated.<br><br>
+
+4.	If you want to define a new NetView subsystem for your NetView V6R3 installation or your NetView V6R2 installation, define this subsystem now. To dynamically add the NetView subsystem, issue the SETSSI ADD command:<br><br>
+<img src="Screenshot%20(110).png"><br><br>
+where ssiname is a new subsystem name.<br><br>
+
+<b>Note:</b> When APARs OA55071 and OA55074 are applied, you must specify an <i>INITPARM</i> parameter with the Canzlog data space parameters that you want to use on the <b>SETSSI ADD,SUBNAME=ssiname,INITRTN=DSI4LSIT</b> command. This step must be done, because the
+ 
+Canzlog data space structure has changed as a result of the specified APARs. For more information, see the<i> Installation: Getting Started.</i><br><br>
+<b>Tip:</b> The subsystem name for an instance of the NetView program consists of the first 4 characters of the job name that is associated with its main address space and the matching SSI procedure. The subsystem name that you use for a NetView instance must not be the same as any other subsystem name in use; multiple NetView address spaces cannot use the same subsystem name.<br><br>
+The CNM617I message is displayed when the SETSSI ADD command completes.<br>
+5.	Make sure that the NetView V6R3 libraries are included on the STEPLIB DD statements in the specified NetView V6R3 start procedure:<br>
+
+<img src="Screenshot%20(111).png"><br><br>
+
+While it is possible to dynamically add the NetView V6R3 libraries to the MVS LNKLST concatenation, doing so can affect other processes and applications that are running in your z/OS environment. You can avoid this situation by placing the appropriate NetView V6R3 libraries on STEPLIB DD statements in the respective start procedures. Refer to the NetView V6R3 sample start procedures in the NETVIEW.V6R3M0.CNMSAMP data set to review examples of STEPLIB DD statements for each of the NetView start procedures that are listed in Table 37 on page 105.<br><br>
+6.	Start the NetView subsystem procedure (CNMPSSI) for your NetView V6R3 subsystem. The CNM541I message is displayed after the NetView subsystem starts successfully.<br><br>
+7.	Start the NetView procedure (CNMPROC) for the NetView V6R3 program.<br><br>
+8.	Start any additional NetView V6R3 address spaces when they are migrated to the NetView V6R3 level.<br><br>
+
+<b>Returning to NetView V6R2 Program without Restarting the MVS System</b><br>
+To resume operation of your previous NetView V6R2 installation without restarting the MVS system, complete these steps.<br><br>
+
+<b>Procedure</b><br><br>
+1.	If your NetView V6R3 program uses the same subsystem name as your V6R2 program, stop all NetView V6R3 address spaces.<br><br>
+2.	Start all NetView V6R2 address spaces.<br><br>
+</p>
+
+<b>Migrating from NetView V6R2M1 Program without Restarting the MVS System</b> Follow these steps <br>
+<p>if you want to complete the migration from NetView V6R2M1 program without restarting the MVS system.<br><br>
+
+    <b>Before you begin</b><br>
+This procedure assumes that you completed all installation procedures that are previously documented in this information, but without restarting the MVS system.<br><br>
+
+    <b>Procedure</b><br><br>
+1.	If the NetView V6R3 program uses the same subsystem name as V6R2M1, stop all NetView V6R2M1 address spaces.
+2.	Dynamically add the NetView V6R3 modules to the link pack area (LPA):
+        <pre>        • BNJLINTB
+        • BNJMTERM
+        • BNJSVC76
+        • CNMCNETV
+        • CNMCSRVP
+        • CNMCSSEI
+        • CNMCSSPI
+        • CNMNETV
+        • DSIELSVC
+        • DSIRVCEX
+        • DSISPNOT
+        • DSI4LCUI
+        • DSI4LSIT</pre>
+Use the<b> SETPROG LPA ADD</b> command to add each module:<br><br>
+<img src="Screenshot%20(112).png"><br><br>
+where module is the module name and NETVIEW.V6R3M0.SCNMLPA1 is the NetView library where the module was installed.<br><br>
+<b>Note:</b> To ensure that all updates are applied, consider loading the most recent version of each module in the LPA. You can load all of the modules in NETVIEW.V6R3M0.SCNMLPA1 with one command by issuing the following command:<br><br>
+<img src="Screenshot%20(120).png"><br><br>
+3.	Add the required NetView modules to the list of APF-authorized libraries.<br><br>
+Issue the following MVS command to dynamically add NetView libraries to the list of APF-authorized libraries without requiring a system restart:<br><br>
+<img src="Screenshot%20(114).png"><br><br>
+&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; Issue the following MVS commands to add APF authorizations for the required NetView libraries:<br><br>
+<img src="Screenshot%20(117).png"><br><br> 
+&nbsp;&nbsp; &nbsp;&nbsp;where vol-ser is the name of the volume where the NetView V6R3 libraries were allocated.<br><br>
+ 
+4.	If you want to define a new NetView subsystem for your NetView V6R3 installation or your NetView V6R2M1 installation, define this subsystem now. To dynamically add the NetView subsystem, issue the SETSSI ADD command:
+<img src="Screenshot%20(118).png"><br><br>
+where ssiname is a new subsystem name.<br><br>
+<b>Note:</b> When APARs OA55071 and OA55074 are applied, you must specify an INITPARM parameter with the Canzlog data space parameters that you want to use on the<b> SETSSI ADD,SUBNAME=ssiname,INITRTN=DSI4LSIT</b> command. This step must be done, because the Canzlog data space structure has changed as a result of the specified APARs. For more information, see the <i>Installation: Getting Started.</i><br><br>
+<b>Tip:</b> The subsystem name for an instance of the NetView program consists of the first 4 characters of the job name that is associated with its main address space and the matching SSI procedure. The subsystem name that you use for a NetView instance must not be the same as any other subsystem name in use; multiple NetView address spaces cannot use the same subsystem name.<br><br>
+The CNM617I message is displayed when the <b>SETSSI ADD</b> command completes.<br><br>
+5.	Make sure that the NetView V6R3 libraries are included on the STEPLIB DD statements in the specified NetView V6R3 start procedure:<br><br>
+<img src="Screenshot%20(119).png"><br><br>
+
+While it is possible to dynamically add the NetView V6R3 libraries to the MVS LNKLST concatenation, doing so can affect other processes and applications that are running in your z/OS environment. You can avoid this situation by placing the appropriate NetView V6R3 libraries on STEPLIB DD statements in the respective start procedures. Refer to the NetView V6R3 sample start procedures in the NETVIEW.V6R3M0.CNMSAMP data set to review examples of STEPLIB DD statements for each of the NetView start procedures that are listed in Table 37 on page 105.<br><br>
+6.	Start the NetView subsystem procedure (CNMPSSI) for your NetView V6R3 subsystem. The CNM541I message is displayed after the NetView subsystem starts successfully.<br><br>
+7.	Start the NetView procedure (CNMPROC) for the NetView V6R3 program.<br><br>
+8.	Start any additional NetView V6R3 address spaces when they are migrated to the NetView V6R3 level.<br><br>
+ 
+<b>Returning to NetView V6R2M1 Program without Restarting the MVS System</b><br><br>
+To resume operation of your previous NetView V6R2M1 installation without restarting the MVS system, complete these steps.<br><br>
+
+<b>Procedure</b><br><br>
+1.	If your NetView V6R3 program uses the same subsystem name as your V6R2M1 program, stop all NetView V6R3 address spaces.<br><br>
+2.	Start all NetView V6R2M1 address spaces.
+
+
+
+
+
+
+
+
+
+
+
+
+
+                      
+
+       
+            
+        </p>
+ </body>
+</html>
+        
